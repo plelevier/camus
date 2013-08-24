@@ -30,7 +30,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
+      <artifactId>hadoop-client</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.twitter.elephantbird</groupId>
+        <artifactId>elephant-bird-hadoop-compat</artifactId>
     </dependency>
     <dependency>
       <groupId>kafka</groupId>

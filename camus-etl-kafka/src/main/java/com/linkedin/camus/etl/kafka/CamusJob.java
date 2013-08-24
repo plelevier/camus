@@ -60,6 +60,8 @@ import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
 import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
 
+import com.twitter.elephantbird.util.HadoopCompat;
+
 public class CamusJob extends Configured implements Tool {
 
     public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
@@ -72,13 +74,13 @@ public class CamusJob extends Configured implements Tool {
     public static final String CAMUS_MESSAGE_ENCODER_CLASS = "camus.message.encoder.class";
     public static final String BROKER_URI_FILE = "brokers.uri";
     public static final String POST_TRACKING_COUNTS_TO_KAFKA = "post.tracking.counts.to.kafka";
-   
+
  private final Properties props;
 
     public CamusJob() {
         this.props = new Properties();
     }
-    
+
     public CamusJob(Properties props) throws IOException {
         this.props = props;
     }
@@ -142,20 +144,20 @@ public class CamusJob extends Configured implements Tool {
         job.setJobName("Camus Job");
 
         // Set the default partitioner
-        job.getConfiguration().set(EtlMultiOutputFormat.ETL_DEFAULT_PARTITIONER_CLASS, "com.linkedin.camus.etl.kafka.coders.DefaultPartitioner");
+        HadoopCompat.getConfiguration(job).set(EtlMultiOutputFormat.ETL_DEFAULT_PARTITIONER_CLASS, "com.linkedin.camus.etl.kafka.coders.DefaultPartitioner");
 
         for (Object key : props.keySet()) {
-            job.getConfiguration().set(key.toString(), props.getProperty(key.toString()));
+            HadoopCompat.getConfiguration(job).set(key.toString(), props.getProperty(key.toString()));
         }
 
         // For reasons not clear, just setting the property is not enough.
         if(props.containsKey("fs.defaultFS")) {
-            FileSystem.setDefaultUri(job.getConfiguration(), props.get("fs.defaultFS").toString());
+            FileSystem.setDefaultUri(HadoopCompat.getConfiguration(job), props.get("fs.defaultFS").toString());
         }
 
-        FileSystem fs = FileSystem.get(job.getConfiguration());
+        FileSystem fs = FileSystem.get(HadoopCompat.getConfiguration(job));
 
-        String hadoopCacheJarDir = job.getConfiguration().get("hdfs.default.classpath.dir", null);
+        String hadoopCacheJarDir = HadoopCompat.getConfiguration(job).get("hdfs.default.classpath.dir", null);
         if (hadoopCacheJarDir != null) {
             FileStatus[] status = fs.listStatus(new Path(hadoopCacheJarDir));
 
@@ -166,7 +168,7 @@ public class CamusJob extends Configured implements Tool {
                                 + status[i].getPath());
 
                         DistributedCache.addFileToClassPath(status[i].getPath(),
-                                job.getConfiguration(), fs);
+                                HadoopCompat.getConfiguration(job), fs);
                     }
                 }
             } else {
@@ -176,12 +178,12 @@ public class CamusJob extends Configured implements Tool {
         }
 
         // Adds External jars to hadoop classpath
-        String externalJarList = job.getConfiguration().get("hadoop.external.jarFiles", null);
+        String externalJarList = HadoopCompat.getConfiguration(job).get("hadoop.external.jarFiles", null);
         if (externalJarList != null) {
             String[] jarFiles = externalJarList.split(",");
             for (String jarFile : jarFiles) {
                 System.out.println("Adding extenral jar File:" + jarFile);
-                DistributedCache.addFileToClassPath(new Path(jarFile), job.getConfiguration(), fs);
+                DistributedCache.addFileToClassPath(new Path(jarFile), HadoopCompat.getConfiguration(job), fs);
             }
         }
 
@@ -194,7 +196,7 @@ public class CamusJob extends Configured implements Tool {
         System.out.println("Starting Kafka ETL Job");
 
         Job job = createJob(props);
-        FileSystem fs = FileSystem.get(job.getConfiguration());
+        FileSystem fs = FileSystem.get(HadoopCompat.getConfiguration(job));
 
         System.out.println("The blacklisted topics: "
                 + Arrays.toString(EtlInputFormat.getKafkaBlacklistTopic(job)));
@@ -221,7 +223,7 @@ public class CamusJob extends Configured implements Tool {
         // exceeding HDFS quota. retention is set to a percentage of available
         // quota.
         ContentSummary content = fs.getContentSummary(execBasePath);
-        long limit = (long) (content.getQuota() * job.getConfiguration().getFloat(
+        long limit = (long) (content.getQuota() * HadoopCompat.getConfiguration(job).getFloat(
                 ETL_EXECUTION_HISTORY_MAX_OF_QUOTA, (float) .5));
         limit = limit == 0 ? 50000 : limit;
 
@@ -298,7 +300,7 @@ public class CamusJob extends Configured implements Tool {
                 String topic = f.getPath().getName().split("\\.")[1];
 
                 if (!countsMap.containsKey(topic)) {
-                    countsMap.put(topic, new EtlCounts(job.getConfiguration(), topic,
+                    countsMap.put(topic, new EtlCounts(HadoopCompat.getConfiguration(job), topic,
                             EtlMultiOutputFormat.getMonitorTimeGranularityMins(job) * 60 * 1000L));
                 }
 
@@ -376,7 +378,7 @@ public class CamusJob extends Configured implements Tool {
         // echo any errors
         // we may have encountered.
         if (!job.isSuccessful()) {
-            JobClient client = new JobClient(new JobConf(job.getConfiguration()));
+            JobClient client = new JobClient(new JobConf(HadoopCompat.getConfiguration(job)));
 
             TaskCompletionEvent[] tasks = job.getTaskCompletionEvents(0);
 
@@ -394,7 +396,7 @@ public class CamusJob extends Configured implements Tool {
     /**
      * Creates a diagnostic report mostly focused on timing breakdowns. Useful
      * for determining where to optimize.
-     * 
+     *
      * @param job
      * @param timingMap
      * @throws IOException
@@ -426,7 +428,7 @@ public class CamusJob extends Configured implements Tool {
 
         sb.append(String.format("Total: %d minutes %d seconds\n", minutes, seconds));
 
-        JobClient client = new JobClient(new JobConf(job.getConfiguration()));
+        JobClient client = new JobClient(new JobConf(HadoopCompat.getConfiguration(job)));
 
         TaskReport[] tasks = client.getMapTaskReports(JobID.downgrade(job.getJobID()));
 
@@ -558,6 +560,6 @@ public class CamusJob extends Configured implements Tool {
     }
 
     public static boolean getPostTrackingCountsToKafka(Job job){
-    	return job.getConfiguration().getBoolean(POST_TRACKING_COUNTS_TO_KAFKA, true);
+    	return HadoopCompat.getConfiguration(job).getBoolean(POST_TRACKING_COUNTS_TO_KAFKA, true);
     }
 }

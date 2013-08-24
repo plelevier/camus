@@ -33,10 +33,11 @@ import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.common.EtlCounts;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
+import com.twitter.elephantbird.util.HadoopCompat;
 
 /**
  * MultipleAvroOutputFormat.
- * 
+ *
  * File names are determined by output keys.
  */
 
@@ -96,7 +97,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         Path path = committer.getWorkPath();
         path = new Path(path, getUniqueFile(context, name, EXT));
         writer.create(Schema.parse(schema),
-                path.getFileSystem(context.getConfiguration()).create(path));
+                path.getFileSystem(HadoopCompat.getConfiguration(context)).create(path));
 
         writer.setSyncInterval(getEtlAvroWriterSyncInterval(context));
 
@@ -123,83 +124,83 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     }
 
     public static void setDefaultTimeZone(JobContext job, String tz) {
-        job.getConfiguration().set(ETL_DEFAULT_TIMEZONE, tz);
+        HadoopCompat.getConfiguration(job).set(ETL_DEFAULT_TIMEZONE, tz);
     }
 
     public static String getDefaultTimeZone(JobContext job) {
-        return job.getConfiguration().get(ETL_DEFAULT_TIMEZONE, "America/Los_Angeles");
+        return HadoopCompat.getConfiguration(job).get(ETL_DEFAULT_TIMEZONE, "America/Los_Angeles");
     }
-    
+
     public static void setDestinationPath(JobContext job, Path dest) {
-        job.getConfiguration().set(ETL_DESTINATION_PATH, dest.toString());
+        HadoopCompat.getConfiguration(job).set(ETL_DESTINATION_PATH, dest.toString());
     }
 
     public static Path getDestinationPath(JobContext job) {
-        return new Path(job.getConfiguration().get(ETL_DESTINATION_PATH));
+        return new Path(HadoopCompat.getConfiguration(job).get(ETL_DESTINATION_PATH));
     }
 
     public static void setDestPathTopicSubDir(JobContext job, String subPath) {
-        job.getConfiguration().set(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, subPath);
+        HadoopCompat.getConfiguration(job).set(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, subPath);
     }
 
     public static Path getDestPathTopicSubDir(JobContext job) {
-        return new Path(job.getConfiguration().get(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, "hourly"));
+        return new Path(HadoopCompat.getConfiguration(job).get(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, "hourly"));
     }
 
     public static void setMonitorTimeGranularityMins(JobContext job, int mins) {
-        job.getConfiguration().setInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, mins);
+        HadoopCompat.getConfiguration(job).setInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, mins);
     }
 
     public static int getMonitorTimeGranularityMins(JobContext job) {
-        return job.getConfiguration().getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10);
+        return HadoopCompat.getConfiguration(job).getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10);
     }
 
     public static void setEtlAvroWriterSyncInterval(JobContext job, int val) {
-        job.getConfiguration().setInt(ETL_AVRO_WRITER_SYNC_INTERVAL, val);
+        HadoopCompat.getConfiguration(job).setInt(ETL_AVRO_WRITER_SYNC_INTERVAL, val);
     }
 
     public static int getEtlAvroWriterSyncInterval(JobContext job) {
-        return job.getConfiguration().getInt(ETL_AVRO_WRITER_SYNC_INTERVAL, 16000);
+        return HadoopCompat.getConfiguration(job).getInt(ETL_AVRO_WRITER_SYNC_INTERVAL, 16000);
     }
 
     public static void setEtlDeflateLevel(JobContext job, int val) {
-        job.getConfiguration().setInt(ETL_DEFLATE_LEVEL, val);
+        HadoopCompat.getConfiguration(job).setInt(ETL_DEFLATE_LEVEL, val);
     }
-    
+
     public static void setEtlOutputCodec(JobContext job, String codec) {
-        job.getConfiguration().set(ETL_OUTPUT_CODEC, codec);
+        HadoopCompat.getConfiguration(job).set(ETL_OUTPUT_CODEC, codec);
     }
 
     public static String getEtlOutputCodec(JobContext job) {
-        return job.getConfiguration().get(ETL_OUTPUT_CODEC, ETL_DEFAULT_OUTPUT_CODEC);
+        return HadoopCompat.getConfiguration(job).get(ETL_OUTPUT_CODEC, ETL_DEFAULT_OUTPUT_CODEC);
 
     }
     public static int getEtlDeflateLevel(JobContext job) {
-        return job.getConfiguration().getInt(ETL_DEFLATE_LEVEL, 6);
+        return HadoopCompat.getConfiguration(job).getInt(ETL_DEFLATE_LEVEL, 6);
     }
 
     public static int getEtlOutputFileTimePartitionMins(JobContext job) {
-        return job.getConfiguration().getInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, 60);
+        return HadoopCompat.getConfiguration(job).getInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, 60);
     }
 
     public static void setEtlOutputFileTimePartitionMins(JobContext job, int val) {
-        job.getConfiguration().setInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, val);
+        HadoopCompat.getConfiguration(job).setInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, val);
     }
 
     public static boolean isRunMoveData(JobContext job) {
-        return job.getConfiguration().getBoolean(ETL_RUN_MOVE_DATA, true);
+        return HadoopCompat.getConfiguration(job).getBoolean(ETL_RUN_MOVE_DATA, true);
     }
 
     public static void setRunMoveData(JobContext job, boolean value) {
-        job.getConfiguration().setBoolean(ETL_RUN_MOVE_DATA, value);
+        HadoopCompat.getConfiguration(job).setBoolean(ETL_RUN_MOVE_DATA, value);
     }
 
     public static boolean isRunTrackingPost(JobContext job) {
-        return job.getConfiguration().getBoolean(ETL_RUN_TRACKING_POST, false);
+        return HadoopCompat.getConfiguration(job).getBoolean(ETL_RUN_TRACKING_POST, false);
     }
 
     public static void setRunTrackingPost(JobContext job, boolean value) {
-        job.getConfiguration().setBoolean(ETL_RUN_TRACKING_POST, value);
+        HadoopCompat.getConfiguration(job).setBoolean(ETL_RUN_TRACKING_POST, value);
     }
 
     public String getWorkingFileName(JobContext context, EtlKey key) throws IOException {
@@ -209,7 +210,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
     public static Partitioner getDefaultPartitioner(JobContext job) {
         if(partitionersByTopic.get(ETL_DEFAULT_PARTITIONER_CLASS) == null) {
-            List<Partitioner> partitioners = job.getConfiguration().getInstances(ETL_DEFAULT_PARTITIONER_CLASS, com.linkedin.camus.coders.Partitioner.class);
+            List<Partitioner> partitioners = HadoopCompat.getConfiguration(job).getInstances(ETL_DEFAULT_PARTITIONER_CLASS, com.linkedin.camus.coders.Partitioner.class);
             partitionersByTopic.put(ETL_DEFAULT_PARTITIONER_CLASS, partitioners.get(0));
         }
         return partitionersByTopic.get(ETL_DEFAULT_PARTITIONER_CLASS);
@@ -218,7 +219,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static Partitioner getPartitioner(JobContext job, String topicName) throws IOException {
         String customPartitionerProperty = ETL_DEFAULT_PARTITIONER_CLASS + "." + topicName;
         if(partitionersByTopic.get(customPartitionerProperty) == null) {
-            List<Partitioner> partitioners = job.getConfiguration().getInstances(customPartitionerProperty, com.linkedin.camus.coders.Partitioner.class);
+            List<Partitioner> partitioners = HadoopCompat.getConfiguration(job).getInstances(customPartitionerProperty, com.linkedin.camus.coders.Partitioner.class);
             if(partitioners.isEmpty()) {
                 return getDefaultPartitioner(job);
             } else {
@@ -243,8 +244,8 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         public MultiEtlRecordWriter(TaskAttemptContext context) throws IOException,
                 InterruptedException {
             this.context = context;
-            errorWriter = SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
-                    context.getConfiguration(),
+            errorWriter = SequenceFile.createWriter(FileSystem.get(HadoopCompat.getConfiguration(context)),
+                    HadoopCompat.getConfiguration(context),
                     new Path(committer.getWorkPath(), getUniqueFile(context, ERRORS_PREFIX, "")),
                     EtlKey.class, ExceptionWritable.class);
 
@@ -312,7 +313,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         public void addCounts(EtlKey key) throws IOException {
             String workingFileName = getWorkingFileName(context, key);
             if (!counts.containsKey(workingFileName))
-                counts.put(workingFileName, new EtlCounts(context.getConfiguration(), key.getTopic(),
+                counts.put(workingFileName, new EtlCounts(HadoopCompat.getConfiguration(context), key.getTopic(),
                         granularityMs));
             counts.get(workingFileName).incrementMonitorCount(key);
             addOffset(key);
@@ -331,7 +332,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
         @Override
         public void commitTask(TaskAttemptContext context) throws IOException {
-            FileSystem fs = FileSystem.get(context.getConfiguration());
+            FileSystem fs = FileSystem.get(HadoopCompat.getConfiguration(context));
             if (isRunMoveData(context)) {
                 Path workPath = super.getWorkPath();
                 Path baseOutDir = getDestinationPath(context);
@@ -362,7 +363,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             }
 
             SequenceFile.Writer offsetWriter = SequenceFile.createWriter(fs,
-                    context.getConfiguration(),
+                    HadoopCompat.getConfiguration(context),
                     new Path(super.getWorkPath(), getUniqueFile(context, OFFSET_PREFIX, "")),
                     EtlKey.class, NullWritable.class);
             for (String s : offsets.keySet()) {

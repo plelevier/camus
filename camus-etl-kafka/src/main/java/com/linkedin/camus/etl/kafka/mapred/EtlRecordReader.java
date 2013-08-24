@@ -35,6 +35,8 @@ import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
 import com.linkedin.camus.etl.kafka.common.KafkaReader;
+import com.twitter.elephantbird.util.HadoopCompat;
+
 
 public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
     private static final String PRINT_MAX_DECODER_EXCEPTIONS = "max.decoder.exceptions.to.print";
@@ -64,7 +66,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
 
     /**
      * Record reader to fetch directly from Kafka
-     * 
+     *
      * @param split
      * @param job
      * @param reporter
@@ -257,7 +259,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
 				if(exceptionCount == getMaximumDecoderExceptionsToPrint(context))
 				{
 					exceptionCount = Integer.MAX_VALUE; //Any random value
-					System.out.println("The same exception has occured for more than " + getMaximumDecoderExceptionsToPrint(context) + " records. All further exceptions will not be printed");	
+					System.out.println("The same exception has occured for more than " + getMaximumDecoderExceptionsToPrint(context) + " records. All further exceptions will not be printed");
 				}
                         continue;
                     }
@@ -332,6 +334,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
     }
 
    public static int getMaximumDecoderExceptionsToPrint(JobContext job) {
-    	return job.getConfiguration().getInt(PRINT_MAX_DECODER_EXCEPTIONS, 10);
+    	return HadoopCompat.getConfiguration(job).getInt(PRINT_MAX_DECODER_EXCEPTIONS, 10);
     }
 }
