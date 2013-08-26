@@ -219,7 +219,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
                     statusMsg += statusMsg.length() > 0 ? "; " : "";
                     statusMsg += request.getTopic() + ":" + request.getNodeId() + ":"
                             + request.getPartition();
-                    context.setStatus(statusMsg);
+                    HadoopCompat.setStatus(context, statusMsg);
 
                     if (reader != null) {
                         closeReader();
@@ -233,8 +233,8 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
 
                 while (reader.getNext(key, msgValue)) {
                     context.progress();
-                    mapperContext.getCounter("total", "data-read").increment(msgValue.getLength());
-                    mapperContext.getCounter("total", "event-count").increment(1);
+                    HadoopCompat.incrementCounter(mapperContext.getCounter("total", "data-read"), msgValue.getLength());
+                    HadoopCompat.incrementCounter(mapperContext.getCounter("total", "event-count"), 1);
                     byte[] bytes = getBytes(msgValue);
 
                     // check the checksum of message
@@ -280,20 +280,19 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
                     }
 
                     if (timeStamp < beginTimeStamp) {
-                        mapperContext.getCounter("total", "skip-old").increment(1);
+                        HadoopCompat.incrementCounter(mapperContext.getCounter("total", "skip-old"), 1);
                     } else if (endTimeStamp == 0) {
                         DateTime time = new DateTime(timeStamp);
                         statusMsg += " begin read at " + time.toString();
-                        context.setStatus(statusMsg);
+                        HadoopCompat.setStatus(context, statusMsg);
                         System.out.println(key.getTopic() + " begin read at " + time.toString());
                         endTimeStamp = (time.plusHours(this.maxPullHours)).getMillis();
                     } else if (timeStamp > endTimeStamp || System.currentTimeMillis() > maxPullTime) {
                         statusMsg += " max read at " + new DateTime(timeStamp).toString();
-                        context.setStatus(statusMsg);
+                        HadoopCompat.setStatus(context, statusMsg);
                         System.out.println(key.getTopic() + " max read at "
                                 + new DateTime(timeStamp).toString());
-                        mapperContext.getCounter("total", "request-time(ms)").increment(
-                                reader.getFetchTime());
+                        HadoopCompat.incrementCounter(mapperContext.getCounter("total", "request-time(ms)"), reader.getFetchTime());
                         closeReader();
                     }
 
@@ -301,11 +300,10 @@ public class EtlRecordReader extends RecordReader<EtlKey, AvroWrapper<Object>> {
                     value.datum(wrapper.getRecord());
                     long decodeTime = ((secondTime - tempTime));
 
-                    mapperContext.getCounter("total", "decode-time(ms)").increment(decodeTime);
+                    HadoopCompat.incrementCounter(mapperContext.getCounter("total", "decode-time(ms)"), decodeTime);
 
                     if (reader != null) {
-                        mapperContext.getCounter("total", "request-time(ms)").increment(
-                                reader.getFetchTime());
+                        HadoopCompat.incrementCounter(mapperContext.getCounter("total", "request-time(ms)"), reader.getFetchTime());
                     }
                     return true;
                 }

@@ -6,17 +6,18 @@ import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import com.linkedin.camus.etl.kafka.common.EtlKey;
+import com.twitter.elephantbird.util.HadoopCompat;
 
 /**
  * KafkaETL mapper
- * 
+ *
  * input -- EtlKey, AvroWrapper
- * 
+ *
  * output -- EtlKey, AvroWrapper
- * 
+ *
  */
 public class EtlMapper extends Mapper<EtlKey, AvroWrapper<Object>, EtlKey, AvroWrapper<Object>> {
-	
+
 	@Override
 	public void map(EtlKey key, AvroWrapper<Object> val, Context context) throws IOException, InterruptedException {
 		long startTime = System.currentTimeMillis();
@@ -25,6 +26,6 @@ public class EtlMapper extends Mapper<EtlKey, AvroWrapper<Object>, EtlKey, AvroW
 
 		long endTime = System.currentTimeMillis();
 		long mapTime = ((endTime - startTime));
-		context.getCounter("total", "mapper-time(ms)").increment(mapTime);
+        HadoopCompat.incrementCounter(context.getCounter("total", "mapper-time(ms)"), mapTime);
 	}
 }
